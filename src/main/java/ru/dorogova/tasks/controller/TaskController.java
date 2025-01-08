@@ -1,5 +1,8 @@
 package ru.dorogova.tasks.controller;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Timer;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import ru.dorogova.tasks.model.Task;
@@ -15,6 +18,12 @@ import java.util.Optional;
 @RequestMapping("/tasks")
 @AllArgsConstructor
 public class TaskController {
+    /**
+     * позволяет добавить метрику, которая отображает количество запросов
+     */
+    private final Counter count = Metrics.counter("task_counter");
+
+    private final Timer addTaskTimer = Metrics.timer("get_timer");
 
     /**
      * Ссылка на интерфейс, работающий с функционированием "Задач"
@@ -26,7 +35,7 @@ public class TaskController {
      */
     @PostMapping
     public Task addTask(@RequestBody Task task){
-        return taskService.addTask(task);
+        return addTaskTimer.record(() -> taskService.addTask(task));
     }
 
     /**
@@ -34,6 +43,7 @@ public class TaskController {
      */
     @GetMapping
     public List<Task> getAllTasks(){
+        count.increment();
         return taskService.getAllTasks();
     }
 
